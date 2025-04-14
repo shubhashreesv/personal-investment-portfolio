@@ -6,6 +6,10 @@ from .models import Investment
 from .serializers import InvestmentSerializer
 from rest_framework.permissions import IsAuthenticated
 
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.clickjacking import xframe_options_exempt
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from io import BytesIO
@@ -16,6 +20,8 @@ from django.http import HttpResponse
 import matplotlib.pyplot as plt
 import numpy as np
 from io import BytesIO
+
+permission_classes = [IsAuthenticated]
 
 class InvestmentListCreateView(APIView):
     def get(self, request):
@@ -108,6 +114,8 @@ class DownloadExcelView(APIView):
         return response
     
 # Assuming these are your models
+@csrf_exempt
+@xframe_options_exempt
 def generate_investment_graph(request):
     # Fetch all investments from the database
     investments = Investment.objects.all()

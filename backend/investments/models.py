@@ -36,4 +36,3 @@ class Investment(models.Model):
 
     def __str__(self):
         return f"{self.asset} - {self.amount} invested"
-
