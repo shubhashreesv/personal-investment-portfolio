@@ -1,104 +1,131 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TrendingUp, TrendingDown, DollarSign, Edit2, Trash2 } from 'lucide-react';
+import {
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  } from 'recharts';
 
-const StatsCard = ({ title, value, icon, trend }) => {
-  const trendColor = trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-700';
+ 
 
-  return (
-    <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-500 text-sm">{title}</p>
-          <p className={`text-2xl font-bold mt-1 ${trendColor}`}>{value}</p>
-        </div>
-        <div className="p-3 bg-blue-100 rounded-lg">
-          {icon}
+
+  const StatsCard = ({ title, value, icon, trend }) => {
+    const trendColor =
+      trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-700';
+  
+    return (
+      <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-gray-500 text-sm">{title}</p>
+            <p className={`text-2xl font-bold mt-1 ${trendColor}`}>{value}</p>
+          </div>
+          <div className="p-3 bg-blue-100 rounded-lg">
+            {icon}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-const Dashboard = () => {
-  const [investments, setInvestments] = useState([]);
-  const [selectedInvestment, setSelectedInvestment] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+    const Dashboard = () => {
+    const [investments, setInvestments] = useState([]);
+    const [selectedInvestment, setSelectedInvestment] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const chartData = investments.reduce((acc, curr) => {
+        const existing = acc.find((item) => item.date === curr.date);
+        if (existing) {
+        existing.value += curr.current_value;
+        } else {
+        acc.push({ date: curr.date, value: curr.current_value });
+        }
+        return acc;
+    }, []);
+    
+    useEffect(() => {
+        const fetchInvestments = async () => {
+        try {
+            const res = await axios.get('http://localhost:8000/api/investments/');
+            setInvestments(res.data);
+        } catch (err) {
+            console.error("Error fetching investments:", err);
+        }
+        };
 
-  useEffect(() => {
-    const fetchInvestments = async () => {
-      try {
-        const res = await axios.get('http://localhost:8000/api/investments/');
-        setInvestments(res.data);
-      } catch (err) {
-        console.error("Error fetching investments:", err);
-      }
+        fetchInvestments();
+    }, []);
+
+    const totalInvested = investments.reduce((sum, i) => sum + i.amount, 0);
+    const totalCurrent = investments.reduce((sum, i) => sum + i.current_value, 0);
+    const gainLoss = totalCurrent - totalInvested;
+
+    const handleEditClick = (investment) => {
+        setSelectedInvestment(investment);
+        setModalVisible(true);
     };
 
-    fetchInvestments();
-  }, []);
+    const handleDeleteClick = async (id) => {
+        try {
+        await axios.delete(`http://localhost:8000/api/investments/${id}/`);
+        setInvestments(investments.filter((inv) => inv.id !== id));
+        } catch (err) {
+        console.error("Error deleting investment:", err);
+        }
+    };
 
-  const totalInvested = investments.reduce((sum, i) => sum + i.amount, 0);
-  const totalCurrent = investments.reduce((sum, i) => sum + i.current_value, 0);
-  const gainLoss = totalCurrent - totalInvested;
+    const handleModalClose = () => {
+        setModalVisible(false);
+        setSelectedInvestment(null);
+    };
 
-  const handleEditClick = (investment) => {
-    setSelectedInvestment(investment);
-    setModalVisible(true);
-  };
+    const handleUpdateInvestment = async (updatedInvestment) => {
+        try {
+        const res = await axios.put(`http://localhost:8000/api/investments/${updatedInvestment.id}/`, updatedInvestment);
+        setInvestments(investments.map((inv) => (inv.id === updatedInvestment.id ? res.data : inv)));
+        setModalVisible(false);
+        setSelectedInvestment(null);
+        } catch (err) {
+        console.error("Error updating investment:", err);
+        }
+    };
 
-  const handleDeleteClick = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8000/api/investments/${id}/`);
-      setInvestments(investments.filter((inv) => inv.id !== id));
-    } catch (err) {
-      console.error("Error deleting investment:", err);
-    }
-  };
+    return (
+        <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <StatsCard
+        title="Total Invested"
+        value={`$${totalInvested.toFixed(2)}`}
+        icon={<DollarSign className="text-blue-500" />}
+        trend="neutral"
+    />
+    <StatsCard
+        title="Current Value"
+        value={`$${totalCurrent.toFixed(2)}`}
+        icon={<TrendingUp className="text-green-500" />}
+        trend={totalCurrent >= totalInvested ? 'up' : 'down'}
+    />
+    <StatsCard
+        title="Gain / Loss"
+        value={`$${gainLoss.toFixed(2)}`}
+        icon={gainLoss >= 0 ? <TrendingUp className="text-green-500" /> : <TrendingDown className="text-red-500" />}
+        trend={gainLoss >= 0 ? 'up' : 'down'}
+    />
+    </div>
 
-  const handleModalClose = () => {
-    setModalVisible(false);
-    setSelectedInvestment(null);
-  };
+    <div className="bg-white rounded-xl p-6 shadow-md mb-8">
+    <h2 className="text-xl font-semibold mb-4">Portfolio Value Over Time</h2>
+    <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} dot={{ r: 3 }} />
+        </LineChart>
+    </ResponsiveContainer>
+    </div>
 
-  const handleUpdateInvestment = async (updatedInvestment) => {
-    try {
-      const res = await axios.put(`http://localhost:8000/api/investments/${updatedInvestment.id}/`, updatedInvestment);
-      setInvestments(investments.map((inv) => (inv.id === updatedInvestment.id ? res.data : inv)));
-      setModalVisible(false);
-      setSelectedInvestment(null);
-    } catch (err) {
-      console.error("Error updating investment:", err);
-    }
-  };
-
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Welcome back, Investor</h1>
-        <p className="text-gray-600 mt-2">Here's your live portfolio overview</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatsCard
-          title="Total Invested"
-          value={`$${totalInvested.toLocaleString()}`}
-          icon={<DollarSign className="w-6 h-6 text-blue-500" />}
-        />
-        <StatsCard
-          title="Current Value"
-          value={`$${totalCurrent.toLocaleString()}`}
-          icon={<DollarSign className="w-6 h-6 text-blue-500" />}
-        />
-        <StatsCard
-          title="Total Gain/Loss"
-          value={`$${gainLoss.toLocaleString()}`}
-          icon={gainLoss >= 0 ? <TrendingUp className="w-6 h-6 text-green-500" /> : <TrendingDown className="w-6 h-6 text-red-500" />}
-          trend={gainLoss >= 0 ? 'up' : 'down'}
-        />
-      </div>
 
       {/* Investment Table */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
