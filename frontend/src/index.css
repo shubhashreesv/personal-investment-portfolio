@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Ensures smooth transition of the sidebar */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Sidebar links active hover */
+nav a:hover {
+  color: #ddd;
+  text-decoration: underline;
+}
+
+/* Sidebar container */
+.sidebar {
+  position: fixed;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease;
+}
+
+/* Sidebar transition for width */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Sidebar width on expanded state */
+.sidebar-expanded {
+  width: 16rem; /* Expanded width of sidebar */
+}
+
+/* Sidebar width on collapsed state */
+.sidebar-collapsed {
+  width: 5rem; /* Collapsed width of sidebar */
+}
+
+/* Main content area */
+.main-content {
+  margin-left: 16rem; /* Ensures the main content starts after the sidebar */
+  transition: margin-left 0.3s ease; /* Smooth transition */
+}
+
+/* Sidebar links active hover */
+nav a:hover {
+  color: #ddd;
+  text-decoration: underline;
+}
