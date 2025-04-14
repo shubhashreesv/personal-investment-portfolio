@@ -1,8 +1,21 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from .models import Investment
 from .serializers import InvestmentSerializer
+from rest_framework.permissions import IsAuthenticated
+
+import matplotlib.pyplot as plt
+import pandas as pd
+from io import BytesIO
+from .models import Investment 
+
+from django.http import HttpResponse
+
+import matplotlib.pyplot as plt
+import numpy as np
+from io import BytesIO
 
 class InvestmentListCreateView(APIView):
     def get(self, request):
@@ -61,3 +74,87 @@ class InvestmentHistoryView(APIView):
             return Response({"error": "Investment not found."}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(investment.value_history)
+
+
+class DownloadExcelView(APIView):
+    permission_classes = [AllowAny]  # Allow any user to access this view
+
+    def get(self, request):
+        # Retrieve all investments
+        investments = Investment.objects.all()
+        
+        # Convert investments to a Pandas DataFrame
+        data = []
+        for investment in investments:
+            data.append({
+                "asset": investment.asset,
+                "amount": investment.amount,
+                "date": investment.date,
+                "current_value": investment.current_value,
+                "profit_loss": investment.profit_loss,
+                "value_history": investment.value_history,
+            })
+        
+        df = pd.DataFrame(data)
+        
+        # Convert to Excel
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = 'attachment; filename=portfolio.xlsx'
+        
+        # Write the DataFrame to the response as Excel
+        with pd.ExcelWriter(response, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False)
+        
+        return response
+    
+# Assuming these are your models
+def generate_investment_graph(request):
+    # Fetch all investments from the database
+    investments = Investment.objects.all()
+    
+    data_frames = []
+    
+    for investment in investments:
+        # Extract the value history from the investment's value_history field
+        value_history = investment.value_history
+        
+        investment_data = []
+        for entry in value_history:
+            # Extract the date and value from the value_history JSON field
+            investment_data.append((entry["date"], entry["value"]))
+        
+        # Convert the data to a Pandas DataFrame
+        df = pd.DataFrame(investment_data, columns=['date', 'value'])
+        df['date'] = pd.to_datetime(df['date'])
+        df['week'] = df['date'].dt.isocalendar().week  # Convert date to week number
+        df['asset'] = investment.asset  # Assign the asset name to the 'asset' column
+        
+        data_frames.append(df)
+    
+    # Concatenate all individual dataframes
+    all_data = pd.concat(data_frames, ignore_index=True)
+    
+    # Plotting the data
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Plot each asset's data
+    for asset in all_data['asset'].unique():
+        asset_data = all_data[all_data['asset'] == asset]
+        ax.plot(asset_data['week'], asset_data['value'], label=asset, marker='o')
+    
+    ax.set_title("Investment Value by Week")
+    ax.set_xlabel("Week Number")
+    ax.set_ylabel("Value ($)")
+    ax.legend(title="Assets")
+    
+    plt.grid(True)
+    
+    # Save the plot to a BytesIO object
+    image_buffer = BytesIO()
+    plt.savefig(image_buffer, format='png')
+    image_buffer.seek(0)
+    
+    # Return the image in the HTTP response as PNG
+    response = HttpResponse(image_buffer, content_type='image/png')
+    response['Content-Disposition'] = 'attachment; filename="investment_graph.png"'
+    return response
