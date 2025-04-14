@@ -32,20 +32,35 @@ const ManageInvestments = () => {
     e.preventDefault();
     try {
       if (isEditMode && editId) {
-        await axios.put(`http://localhost:8000/api/investments/${editId}/`, formData);
-        await fetchInvestments();
+        // PUT request to update the investment
+        const response = await axios.put(`http://localhost:8000/api/investments/${editId}/`, formData);
+        
+        // Update the investment in the state after the update
+        const updatedInvestments = investments.map((investment) =>
+          investment.id === editId 
+            ? { ...investment, ...formData, current_value: response.data.current_value }  // Ensure current_value is updated
+            : investment
+        );
+
+        setInvestments(updatedInvestments); // Update state directly
+        
         setIsEditMode(false);
         setEditId(null);
       } else {
+        // POST request to add a new investment
         const response = await axios.post('http://localhost:8000/api/investments/', formData);
-        setInvestments([...investments, response.data]);
-      }
+        setInvestments((prevInvestments) => [...prevInvestments, response.data]);
+    }
+
       setShowForm(false);
       setFormData({ asset: '', amount: 0, date: '', current_value: 0 });
     } catch (error) {
       console.error("Error saving investment:", error);
     }
-  };
+   };
+
+
+  
 
   const handleEdit = (investment) => {
     setFormData({

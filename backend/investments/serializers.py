@@ -8,7 +8,7 @@ class InvestmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Investment
-        fields = ['id', 'asset', 'amount', 'date', 'current_value', 'profit_loss']
+        fields = ['id', 'asset', 'amount', 'date', 'current_value', 'profit_loss', 'value_history']
 
     def get_profit_loss(self, obj):
         return obj.profit_loss
