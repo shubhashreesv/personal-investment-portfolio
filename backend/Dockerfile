@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 #Copies everything from your local backend/ folder into the container’s /app folder.
-COPY backend/ .
+COPY . .
 
 # Expose port - Documents that the container will listen on port 8000.
 EXPOSE 8000
