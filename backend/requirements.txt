@@ -1,6 +1,9 @@
-Django>=5.0,<6.0
-djangorestframework>=3.14
-gunicorn>=21.2.0 #production-grade WSGI server (needed if you deploy beyond runserver).
-mysqlclient>=2.2.4
+Django==4.3.0
+djangorestframework==3.20.0
+gunicorn==23.0.0
+mysqlclient==2.2.0
 django-cors-headers==4.2.0
 matplotlib==3.8.0
+pandas==2.1.0
+numpy==1.26.0
+XlsxWriter==3.1.0
