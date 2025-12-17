@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import InvestmentListCreateView, InvestmentDetailView, ClearInvestmentsView, InvestmentHistoryView, DownloadExcelView
+from .views import InvestmentListCreateView, InvestmentDetailView, ClearInvestmentsView, InvestmentHistoryView, DownloadExcelView, email_excel, ask
 from . import views
 
 urlpatterns = [
@@ -9,4 +9,6 @@ urlpatterns = [
     path('investments/<int:pk>/history/', InvestmentHistoryView.as_view(), name='investment-history'),
     path('download_excel/', DownloadExcelView.as_view(), name='download-excel'),
     path('download_investment_graph/', views.generate_investment_graph, name='download_investment_graph'),
+    path('email_excel/', email_excel, name='email_excel'),
+    path('ask/', views.ask, name='ask'),
 ]

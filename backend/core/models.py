@@ -1,20 +1,24 @@
-#core/models.py
+from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 
-from django.contrib.auth.models import User
-from rest_framework import serializers
+class EmailOTP(models.Model):
+    email = models.EmailField()
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
 
-# Serializer for user registration
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(minutes=5)
+        super().save(*args, **kwargs)
 
-    def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
+    def is_valid(self):
+        return (
+            not self.is_used and
+            timezone.now() < self.expires_at
+        )
 
-# Serializer for user login (using only username and password)
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
+    def __str__(self):
+        return f"{self.email} - {self.otp}"

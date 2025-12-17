@@ -11,6 +11,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loggedInUser, setLoggedInUser] = useState(null);
+  const [showLoggedInScreen, setShowLoggedInScreen] = useState(false);
 
   // Check if user is already logged in on component mount
   useEffect(() => {
@@ -20,6 +21,7 @@ const Auth = () => {
         // Decode JWT token to get user info
         const payload = JSON.parse(atob(token.split('.')[1]));
         setLoggedInUser(payload.email);
+        setShowLoggedInScreen(true);
       } catch (error) {
         console.error('Error decoding token:', error);
         // Token might be invalid, clear it
@@ -32,6 +34,7 @@ const Auth = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     setLoggedInUser(null);
+    setShowLoggedInScreen(false);
     setMessage({ text: 'Successfully logged out!', type: 'success' });
   };
 
@@ -79,13 +82,14 @@ const Auth = () => {
       // Decode and set logged in user
       const payload = JSON.parse(atob(access.split('.')[1]));
       setLoggedInUser(payload.email);
+      setShowLoggedInScreen(true);
       
       setMessage({ 
         text: `Successfully ${isLogin ? 'logged in' : 'signed up'}!`, 
         type: 'success' 
       });
       
-      // Reset form
+      // Reset form for next time
       setEmail('');
       setOtp('');
       setStep(1);
@@ -118,7 +122,7 @@ const Auth = () => {
   };
 
   // If user is logged in, show the logged in state
-  if (loggedInUser) {
+  if (showLoggedInScreen && loggedInUser) {
     return (
       <div className="auth-container">
         <div className="auth-card">
@@ -129,8 +133,20 @@ const Auth = () => {
               </svg>
             </div>
             <h2>Welcome Back!</h2>
-            <p className="user-email">{loggedInUser}</p>
+            <div className="user-email-display">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="email-icon">
+                <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+                <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+              </svg>
+              <span>{loggedInUser}</span>
+            </div>
           </div>
+
+          {message.text && (
+            <div className={`message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
 
           <div className="logged-in-status">
             <div className="status-indicator">
@@ -150,19 +166,34 @@ const Auth = () => {
               Go to Dashboard
             </button>
             
-            <button 
-              className="action-button secondary-action"
-              onClick={reLogin}
-            >
-              Login as Different User
-            </button>
-            
-            <button 
-              className="action-button logout-action"
-              onClick={logout}
-            >
-              Logout
-            </button>
+            <div className="auth-actions">
+              <button 
+                className="action-button secondary-action"
+                onClick={reLogin}
+              >
+                Login as Different User
+              </button>
+              
+              <button 
+                className="action-button logout-action"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <div className="auth-footer">
+            <p>
+              Not {loggedInUser}? 
+              <button 
+                type="button" 
+                className="toggle-button"
+                onClick={reLogin}
+              >
+                Click here to login as different user
+              </button>
+            </p>
           </div>
         </div>
       </div>
